@@ -11,17 +11,17 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU Affero General Public License for more details.
 """
-%config IPCompleter.greedy=True
+#%config IPCompleter.greedy=True
 
 import networkx as nx
 import numpy as np
 import numpy.random as rnd
 import collections
 import math as m
-from prettytable import PrettyTable
+#from prettytable import PrettyTable
 
 import matplotlib.pylab as plt
-%matplotlib inline
+#%matplotlib inline
 #plt.style.use('ggplot')
 
 #import warnings
