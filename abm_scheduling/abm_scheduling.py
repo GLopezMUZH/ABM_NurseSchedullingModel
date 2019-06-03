@@ -64,15 +64,17 @@ class Schedule():
             total_shifts += shift.num_nurses_needed
             filled_shifts += min(len(shift.nurses), shift.num_nurses_needed)
         return filled_shifts / total_shifts
-    
-    def print_filled_in_schedule(self, schedule_strs, title=''):
+
+    """        
+   def print_filled_in_schedule(self, schedule_strs, title=''):
         t = PrettyTable([''] + self.days)
         t.align = 'l'
         for i in range(self.num_shifts_per_day):
             t.add_row([f'shift {i + 1}'] + schedule_strs[i::self.num_shifts_per_day])
         print(title)
-        print(t)
-                
+        print(t) 
+    """
+    """        
     def print_schedule(self):
         schedule_strs = []
         for shift in self.schedule:
@@ -81,6 +83,26 @@ class Schedule():
                 f'nurses: {shift.nurses}'
             )
         self.print_filled_in_schedule(schedule_strs, title="Week's Schedule")
+    """        
+    def print_schedule(self):
+        schedule_line = " \t "
+        i = -1
+        for col in range(len(self.days)):
+            schedule_line += " " + str(self.days[col]) + " " 
+        print(schedule_line)
+
+        for row in range(self.num_shifts_per_day):
+            schedule_line_top = str(row) + "\t " 
+            schedule_line_bottom = str(row) + "\t "    
+            for col in range(len(self.days)):
+                i += 1
+                shift = self.schedule[i]
+                #place = row*len(self.days) + col
+                schedule_line_top += f'need: {shift.num_nurses_needed}    ' + "\t"
+                schedule_line_bottom += f'nurses: {shift.nurses}' + "\t "                
+            print(schedule_line_top)
+            print(schedule_line_bottom)
+
     
 class Nurse():
     def __init__(self, id_name):
@@ -104,4 +126,7 @@ class Nurse():
                 schedule_strs.append('x')
             else:
                 schedule_strs.append(' ')
-        schedule.print_filled_in_schedule(schedule_strs, title=f"Nurse {self.id_name}'s Preferences")
+        #schedule.print_filled_in_schedule(schedule_strs, title=f"Nurse {self.id_name}'s Preferences")
+
+
+#%%
