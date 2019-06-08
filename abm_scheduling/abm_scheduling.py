@@ -1,7 +1,8 @@
 #%%
 """
-    bowtievisualization is an OpenSource python package for the analysis of
-    networkx networks under the bow-tie structure analysis
+    abm_scheduling is an OpenSource python package for the analysis of
+    the Nurse Scheduling Problem using an Agent Based Modeling approach
+    based on 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +19,7 @@ import numpy as np
 import numpy.random as rnd
 import collections
 import math as m
-#from prettytable import PrettyTable
+from prettytable import PrettyTable
 import copy
 
 import matplotlib.pylab as plt
@@ -46,17 +47,26 @@ class Shift():
     def get_list_of_nurses_names(self):
         return [n.id_name for n in self.nurses]
 
+#%%
 class Schedule():
     num_shifts_per_day = 3
-    days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'So']
     
-    def __init__(self, num_nurses_needed, is_random=False):
+    def __init__(self, num_nurses_needed = 1, matrix_nurses_needed = [], is_random=False):
         self.num_nurses_needed = num_nurses_needed
         self.is_random = is_random
         self.schedule = []
+        i = 0
         for day in self.days:
             for shift_num in range(self.num_shifts_per_day):
-                num_needed = rnd.randint(self.num_nurses_needed + 1) if is_random else self.num_nurses_needed
+                if is_random:
+                    num_needed = rnd.randint(self.num_nurses_needed + 1) 
+                elif len(matrix_nurses_needed) > 0: 
+                    num_needed = matrix_nurses_needed[i]
+                    i += 1
+                else:
+                    num_needed = self.num_nurses_needed
+                
                 self.schedule.append(Shift(day, shift_num + 1, num_needed))
                 
     def get_shift_coverage(self):
@@ -86,7 +96,7 @@ class Schedule():
         # evaluating shift capacity (no overbooking shifts)
         for shift in self.schedule:
             if len(shift.nurses) > shift.num_nurses_needed:
-                utility -= 50000
+                utility -= 1000
             else:
                 utility += len(shift.nurses) * 10
             nurses_assigned_per_day[shift.day] += shift.get_list_of_nurses_names()
@@ -95,7 +105,7 @@ class Schedule():
             counts = collections.Counter(nurses_assigned_per_day[day])
             for nurse in counts:
                 if counts[nurse] > 1:
-                    utility -= 5000
+                    utility -= 1000
                 if nurse in nurses_days_working:
                     nurses_days_working[nurse].append(1)
                 else:
@@ -103,11 +113,10 @@ class Schedule():
         # evaluating continuous days working (employees cannot work for more than 6 days continuously)
         for nurse in nurses_days_working:
             if len(nurses_days_working[nurse]) >= 7:
-                utility -= 5000
+                utility -= 1000
         utility *= beta
         return utility
 
-    """ 
     def print_filled_in_schedule(self, schedule_strs, title=''):
         t = PrettyTable([''] + self.days)
         t.align = 'l'
@@ -115,31 +124,8 @@ class Schedule():
             t.add_row([f'shift {i + 1}'] + schedule_strs[i::self.num_shifts_per_day])
         print(title)
         print(t)
-    """         
-
-    def print_filled_in_schedule(self, schedule_strs, title=''):
-        schedule_line = " \t "
-        i = -2
-        for col in range(len(self.days)):
-            schedule_line += " " + str(self.days[col]) + " " 
-        print(schedule_line)
-
-        for row in range(self.num_shifts_per_day):
-            schedule_line_top = str(row) + "\t " 
-            schedule_line_bottom = str(row) + "\t "    
-            for col in range(len(self.days)):
-                i += 2
-                top_text = schedule_strs[i]
-                bottom_text = schedule_strs[i+1]
-                #place = row*len(self.days) + col
-                schedule_line_top += f'need: {top_text}    ' + "\t"
-                schedule_line_bottom += f'nurses: {bottom_text}' + "\t "                
-            print(schedule_line_top)
-            print(schedule_line_bottom)
-
-
+                
     def print_schedule(self):
-        print("WHATEVER")
         schedule_strs = []
         for shift in self.schedule:
             nurses_str = ''
@@ -153,9 +139,52 @@ class Schedule():
                 f"need: {shift.num_nurses_needed}\n"
                 f"nurses: {nurses_str}"
             )
+        self.print_filled_in_schedule(schedule_strs, title="Week's Schedule")
+    """         
+    def print_filled_in_schedule(self, schedule_strs, title=''):
+        print(title)
+        print(len(schedule_strs), schedule_strs)
+        schedule_line = " \t "
+        i = -2
+        for col in range(len(self.days)):
+            schedule_line += str(self.days[col]) +  "\t "
+        print(schedule_line)
+
+        for row in range(self.num_shifts_per_day):
+            schedule_line = str(row) + "\t" 
+            for col in range(len(self.days)):
+                i += 2
+                need_text = schedule_strs[i]
+                scheduled_text = schedule_strs[i+1]
+                #place = row*len(self.days) + col
+                schedule_line += f'{need_text}'
+                schedule_line += f'({scheduled_text})' + "\t"                
+            print(schedule_line)
+            print('{s:{c}^{n}}'.format(s='-',n=60,c='-'))
+
+
+    def print_schedule(self):
+        schedule_strs = []
+        for shift in self.schedule:
+            #print(shift.day, shift.shift_num)
+            nurses_str = ''
+            for idx, n in enumerate(shift.get_list_of_nurses_names()):
+                if idx % 4 == 0:
+                    nurses_str += ','
+                nurses_str += str(n)
+                if idx != len(shift.get_list_of_nurses_names()) - 1:
+                    nurses_str += ','
+            schedule_strs.append( 
+                f"{shift.num_nurses_needed}"
+            )
+            schedule_strs.append( 
+                f"{nurses_str}"
+            )
         print(schedule_strs)
         self.print_filled_in_schedule(schedule_strs, title="Week's Schedule")
+    """
 
+#%%
 class Nurse():
     def __init__(self, id_name):
         self.id_name = id_name
@@ -169,7 +198,7 @@ class Nurse():
                 continue
             if rnd.uniform() < degree_of_agent_availability:
                 self.shift_preferences.append((shift.day, shift.shift_num))
-    
+
     def print_shift_preferences(self):
         schedule = Schedule(0)
         schedule_strs = []
@@ -179,6 +208,22 @@ class Nurse():
             else:
                 schedule_strs.append(' ')
         schedule.print_filled_in_schedule(schedule_strs, title=f"Nurse {self.id_name}'s Preferences")
+
+    """        
+    def print_shift_preferences(self):
+        schedule = Schedule(0)
+        schedule_strs = []
+        for shift in schedule.schedule:
+            schedule_strs.append(' ') # empty field for the "needed nurses of the schedule"
+            if shift.get_id_tuple() in self.shift_preferences:
+                print(shift.get_id_tuple())
+                schedule_strs.append('x')
+            else:
+                schedule_strs.append(' ')
+        schedule.print_filled_in_schedule(schedule_strs, title=f"Nurse {self.id_name}'s Preferences")
+    """
+
+
 
 #%%
 def generate_nurses(num_nurses, degree_of_agent_availability, works_weekends):
