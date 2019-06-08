@@ -9,46 +9,47 @@
 # Here are the libraries / configurations used.
 
 # In[1]:
+import os
+print (os.getcwd())
+path = r'C:\Users\glopez\uzh_stuff\MOEC0559AgentBasedModeling\ABM_NurseSchedullingModel'
+os.chdir(path)
 
+#%%
 
 #get_ipython().run_line_magic('config', 'IPCompleter.greedy=True')
-
+import numpy.random as rnd
 import importlib
-import abm_scheduling as sch
-
+import abm_scheduling
 #from prettytable import PrettyTable
+from abm_scheduling import Schedule as Schedule
+#from abm_scheduling import Nurse as Nurse
 
 
 # In[2]:
-
-
-importlib.reload(sch)
+importlib.reload(abm_scheduling)
 
 
 # In[3]:
-
-
 # --example schedules--
-schedule_fixed = sch.Schedule(num_nurses_needed=3)
+schedule_fixed = Schedule(num_nurses_needed=3)
 schedule_fixed.print_schedule()
 
 
 # In[4]:
 
 
-schedule_random = sch.Schedule(num_nurses_needed=3, is_random=True)
+schedule_random = Schedule(num_nurses_needed=3, is_random=True)
 schedule_random.print_schedule()
 
 
-# In[ ]:
-
-
+#%%
 # --example nurses--
 # full time, no weekends
 nurse = Nurse(id_name=0)
 nurse.generate_shift_preferences(degree_of_agent_availability=1, works_weekends=False)
 nurse.print_shift_preferences()
 
+#%%
 # full time, weekends
 nurse = Nurse(id_name=1)
 nurse.generate_shift_preferences(degree_of_agent_availability=1, works_weekends=True)
