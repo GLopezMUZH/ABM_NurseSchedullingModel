@@ -1,3 +1,4 @@
+#%%
 import abm_scheduling
 from abm_scheduling import Schedule as Schedule
 from abm_scheduling import Nurse as Nurse
@@ -12,6 +13,15 @@ schedule_random = Schedule(num_nurses_needed=3, is_random=True)
 schedule_random.print_schedule()
 
 
+#%% Defined numbers
+# Mo 1,2,3, Tu 1,2,3, We...
+matrix_nurses_needed = [5,8,5, 4,7,4, 4,7,4, 4,7,5, 5,7,7, 6,7,8, 7,5,5]
+schedule_random = Schedule(matrix_nurses_needed=matrix_nurses_needed, is_random=False)
+schedule_random.print_schedule()
+
+"""
+-- NURSE GENERATION EXAMPLES --
+"""
 #%%
 # --example nurses--
 # full time, no weekends
@@ -44,9 +54,9 @@ for n in range(num_nurses):
     nurse.generate_shift_preferences(degree_of_agent_availability=0.5, works_weekends=True)
     nurses.append(nurse)
 
-#%% Defined numbers
+#%% Defined 1st and 2nd shift work days
 # Mo 1,2,3, Tu 1,2,3, We...
-matrix_nurses_needed = [5,8,5, 4,7,4, 4,7,4, 4,7,5, 5,7,7, 6,7,8, 7,5,5]
-schedule_random = Schedule(matrix_nurses_needed=matrix_nurses_needed, is_random=False)
-schedule_random.print_schedule()
-
+matrix_nurse_availability = ['x','x','', 'x','x','',  'x','x','', 'x','x','', 'x','x','', '','','', '','','']
+nurse = Nurse(id_name=5)
+nurse.assign_shift_preferences(matrix_nurse_availability=matrix_nurse_availability)
+nurse.print_shift_preferences()

@@ -125,7 +125,7 @@ class Schedule():
         print(title)
         print(t)
                 
-    def print_schedule(self):
+    def print_schedule(self, schedule_name = ''):
         schedule_strs = []
         for shift in self.schedule:
             nurses_str = ''
@@ -139,7 +139,22 @@ class Schedule():
                 f"need: {shift.num_nurses_needed}\n"
                 f"nurses: {nurses_str}"
             )
-        self.print_filled_in_schedule(schedule_strs, title="Week's Schedule")
+        title = "Week's Schedule " + schedule_name
+        self.print_filled_in_schedule(schedule_strs, title=title)
+
+    def print_shift_coverage(self, schedule_name = ''):
+        schedule_strs = []
+        for shift in self.schedule:
+            #filled_shifts += min(len(shift.nurses), shift.num_nurses_needed)
+            schedule_strs.append( 
+                f"need: {shift.num_nurses_needed}\n"
+                f"nurses: {len(shift.nurses)}\n"
+                f"({(len(shift.nurses) / shift.num_nurses_needed):.3g})"
+            )
+        title = "Shift Coverage " + schedule_name
+        self.print_filled_in_schedule(schedule_strs, title=title)
+
+
     """         
     def print_filled_in_schedule(self, schedule_strs, title=''):
         print(title)
@@ -190,7 +205,8 @@ class Nurse():
         self.id_name = id_name
         self.shift_preferences = []
         self.shifts = []
-        
+        self.degree_of_availability = 0
+    
     def generate_shift_preferences(self, degree_of_agent_availability, works_weekends):
         schedule = Schedule(0)
         for shift in schedule.schedule:
@@ -198,6 +214,16 @@ class Nurse():
                 continue
             if rnd.uniform() < degree_of_agent_availability:
                 self.shift_preferences.append((shift.day, shift.shift_num))
+                self.degree_of_availability += 1/21
+
+    def assign_shift_preferences(self, matrix_nurse_availability = []):
+        schedule = Schedule(0)
+        i = -1
+        for shift in schedule.schedule:
+            i += 1
+            if matrix_nurse_availability[i] == 'x':
+                self.shift_preferences.append((shift.day, shift.shift_num))
+                self.degree_of_availability += 1/21
 
     def print_shift_preferences(self):
         schedule = Schedule(0)
@@ -208,6 +234,9 @@ class Nurse():
             else:
                 schedule_strs.append(' ')
         schedule.print_filled_in_schedule(schedule_strs, title=f"Nurse {self.id_name}'s Preferences")
+
+    def get_productivity(self):
+        return self.degree_of_availability
 
     """        
     def print_shift_preferences(self):
@@ -226,10 +255,22 @@ class Nurse():
 
 
 #%%
-def generate_nurses(num_nurses, degree_of_agent_availability, works_weekends):
-    nurses = []
-    for n in range(num_nurses):
-        nurse = Nurse(id_name=n)
-        nurse.generate_shift_preferences(degree_of_agent_availability, works_weekends)
-        nurses.append(nurse)
-    return nurses
+class NSP_AB_Model():
+    def generate_nurses(self, num_nurses, degree_of_agent_availability, works_weekends):
+        nurses = []
+        for n in range(num_nurses):
+            nurse = Nurse(id_name=n)
+            nurse.generate_shift_preferences(degree_of_agent_availability, works_weekends)
+            nurses.append(nurse)
+        return nurses
+    
+    def generate_nurses_from_nurse_schedules(self, list_of_nurse_schedules):
+        nurses = []
+        i = -1
+        for s in list_of_nurse_schedules:
+            i += 1
+            nurse = Nurse(id_name=i)
+            nurse.assign_shift_preferences(s)
+            nurses.append(nurse)
+        return nurses
+
