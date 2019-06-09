@@ -14,7 +14,6 @@ print (os.getcwd())
 path = r'C:\Users\glopez\uzh_stuff\MOEC0559AgentBasedModeling\ABM_NurseSchedullingModel'
 os.chdir(path)
 
-#%%
 #get_ipython().run_line_magic('config', 'IPCompleter.greedy=True')
 import importlib
 import abm_scheduling
@@ -23,11 +22,9 @@ from abm_scheduling import Nurse as Nurse
 
 
 #%%
-importlib.reload(abm_scheduling)
+#importlib.reload(abm_scheduling)
 
 #%% Initializations
-p_to_accept_negative_change = .001
-
 # Situation definition
 matrix_nurses_needed = [5,8,5, 4,7,4, 4,7,4, 4,7,5, 5,7,7, 6,7,8, 7,5,5]
 matrix_nurse_availability_type1 = ['x','x','', 'x','x','',  'x','x','', 'x','x','', 'x','x','', '','','', '','','']
@@ -56,13 +53,14 @@ schedule.print_schedule(schedule_name="Intial Situation")
 
 
 #%%
-model.show_hypothetical_max_schedule(schedule=schedule, nurses=nurses)
+#model.show_hypothetical_max_schedule(schedule=schedule, nurses=nurses)
 
 #%%
-best_schedule, utility_each_timestep, shift_coverage_each_timestep = model.run(schedule=schedule, nurses=nurses, p_to_accept_negative_change=p_to_accept_negative_change)
+p_to_accept_negative_change = .001
+beta=0.6
+results_B_07 = model.run(schedule=schedule, nurses=nurses, beta=0.7, p_to_accept_negative_change=.001, utility_function_parameters = None)
+results_B_09 = model.run(schedule=schedule, nurses=nurses, beta=0.9, p_to_accept_negative_change=.001, utility_function_parameters = None)
 
 #%%
-model.plot_utility_per_timestep(utility_each_timestep)
-model.plot_shift_coverage_per_timestep(shift_coverage_each_timestep)
-
-    
+#model.plot_utility_per_timestep(results_B_07.utility_each_timestep)
+#model.plot_shift_coverage_per_timestep(results_B_07.shift_coverage_each_timestep)
