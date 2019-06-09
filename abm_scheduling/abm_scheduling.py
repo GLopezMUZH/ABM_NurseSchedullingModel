@@ -274,3 +274,76 @@ class NSP_AB_Model():
             nurses.append(nurse)
         return nurses
 
+    def show_hypothetical_max_schedule(self, schedule, nurses):
+        # show what all shift preferences look like in the schedule
+        hypothetical_max_schedule = copy.deepcopy(schedule)
+        for nurse in nurses:
+            for shift in nurse.shift_preferences:
+                hypothetical_max_schedule.add_nurse_to_shift(nurse, shift, False)
+                
+        hypothetical_max_schedule.print_schedule(schedule_name="Hypothetical Maximum")
+        print('Crude hypothetical shift coverage:', hypothetical_max_schedule.get_shift_coverage())
+        hypothetical_max_schedule.print_shift_coverage(schedule_name="Hypothetical Maximum")
+
+
+    def run(self, schedule, nurses, p_to_accept_negative_change = .001, timesteps=10000):
+        best_utility = 0
+        utility_each_timestep = []
+        shift_coverage_each_timestep = []
+
+        candidate_schedule = copy.deepcopy(schedule)
+        best_schedule = copy.deepcopy(schedule)
+
+        # timestep is for each nurse, so total timesteps = x * num_nurses where x is range(x)
+        for timestep in range(timesteps):
+            for nurse in nurses:
+                schedule_utility = schedule.get_utility()
+                utility_each_timestep.append(schedule_utility)
+                shift_coverage_each_timestep.append(schedule.get_shift_coverage())
+                # keep track of best utility
+                if schedule_utility > best_utility:
+                    best_schedule.schedule = copy.deepcopy(schedule.schedule)
+                    best_utility = schedule_utility
+                rnd_i = rnd.randint(len(nurse.shift_preferences))
+                rnd_shift_pref = nurse.shift_preferences[rnd_i]
+                was_in_shift = rnd_shift_pref in nurse.shifts
+                # try adding/removing shift depending on whether the shift is assigned
+                if not was_in_shift:
+                    candidate_schedule.add_nurse_to_shift(nurse, rnd_shift_pref, False)
+                else:
+                    candidate_schedule.remove_nurse_from_shift(nurse, rnd_shift_pref, False)
+                # if the change was better or randomly accept negative change, apply change to schedule
+                if (candidate_schedule.get_utility() > schedule_utility) or (rnd.random_sample() < p_to_accept_negative_change):
+                    if not was_in_shift:
+                        schedule.add_nurse_to_shift(nurse, rnd_shift_pref, True)
+                    else:
+                        schedule.remove_nurse_from_shift(nurse, rnd_shift_pref, True)
+                # if the change was worse, undo the change to the candidate schedule
+                else:
+                    if not was_in_shift:
+                        candidate_schedule.remove_nurse_from_shift(nurse, rnd_shift_pref, False)
+                    else:
+                        candidate_schedule.add_nurse_to_shift(nurse, rnd_shift_pref, False)
+
+        best_schedule.print_schedule(schedule_name='Best Schedule')
+        print('Solution shift coverage:',best_schedule.get_shift_coverage())
+        print('Solution utility', best_schedule.get_utility())
+        return best_schedule, utility_each_timestep, shift_coverage_each_timestep
+    
+    def plot_utility_per_timestep(self, utility_each_timestep):
+        plt.figure()
+        plt.plot(utility_each_timestep, label = "utility")
+        plt.title("Schedule utility of each timestep")
+        plt.xlabel("timestep")
+        plt.ylabel("utility")
+        plt.legend()
+        plt.show()
+
+    def plot_shift_coverage_per_timestep(self,shift_coverage_each_timestep):
+        plt.figure()
+        plt.plot(shift_coverage_each_timestep, label = "shift coverage")
+        plt.title("Shift coverage of each timestep")
+        plt.xlabel("timestep")
+        plt.ylabel("shift coverage")
+        plt.legend()
+        plt.show()
