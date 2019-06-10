@@ -138,6 +138,14 @@ class Schedule():
         utility *= beta
         return utility
 
+    def get_utility_uniform_distribution(self, utility_function_parameters: Utility_Function_Parameters,  beta=0.9):
+        utility = 0
+        return utility
+
+    def get_utility_detect_overstaffing(self, utility_function_parameters: Utility_Function_Parameters,  beta=0.9):
+        utility = 0
+        return utility
+
     def print_filled_in_schedule(self, schedule_strs, title=''):
         t = PrettyTable([''] + self.days)
         t.align = 'l'
