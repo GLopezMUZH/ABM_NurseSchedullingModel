@@ -18,7 +18,7 @@ import networkx as nx
 import numpy as np
 import numpy.random as rnd
 import collections
-import math as m
+import math
 from prettytable import PrettyTable
 import copy
 
@@ -176,57 +176,28 @@ class Schedule():
         self.print_filled_in_schedule(schedule_strs, title=title)
 
 
-    """         
-    def print_filled_in_schedule(self, schedule_strs, title=''):
-        print(title)
-        print(len(schedule_strs), schedule_strs)
-        schedule_line = " \t "
-        i = -2
-        for col in range(len(self.days)):
-            schedule_line += str(self.days[col]) +  "\t "
-        print(schedule_line)
+class Agent_Satisfaction_Parameters():
+    def __init__(self):
+        self.satisfaction_function = 'default'
+        self.base_decrease_coverage_satisfaction = 0.5
+        self.penalty_under_assignment = 1000
+        self.penalty_over_assignment = 1000
+        self.penalty_different_shifts_in_week = 700
 
-        for row in range(self.num_shifts_per_day):
-            schedule_line = str(row) + "\t" 
-            for col in range(len(self.days)):
-                i += 2
-                need_text = schedule_strs[i]
-                scheduled_text = schedule_strs[i+1]
-                #place = row*len(self.days) + col
-                schedule_line += f'{need_text}'
-                schedule_line += f'({scheduled_text})' + "\t"                
-            print(schedule_line)
-            print('{s:{c}^{n}}'.format(s='-',n=60,c='-'))
-
-
-    def print_schedule(self):
-        schedule_strs = []
-        for shift in self.schedule:
-            #print(shift.day, shift.shift_num)
-            nurses_str = ''
-            for idx, n in enumerate(shift.get_list_of_nurses_names()):
-                if idx % 4 == 0:
-                    nurses_str += ','
-                nurses_str += str(n)
-                if idx != len(shift.get_list_of_nurses_names()) - 1:
-                    nurses_str += ','
-            schedule_strs.append( 
-                f"{shift.num_nurses_needed}"
-            )
-            schedule_strs.append( 
-                f"{nurses_str}"
-            )
-        print(schedule_strs)
-        self.print_filled_in_schedule(schedule_strs, title="Week's Schedule")
-    """
 
 #%%
 class Nurse():
     def __init__(self, id_name):
+        """
+        Generated with default Agent Satisfaction Parameters
+        """
         self.id_name = id_name
         self.shift_preferences = []
         self.shifts = []
         self.degree_of_availability = 0
+        self.minimum_shifts = 0
+        self.maximum_shifts = 0
+        self.satisfaction_parameters = Agent_Satisfaction_Parameters()
     
     def generate_shift_preferences(self, degree_of_agent_availability, works_weekends):
         schedule = Schedule(0)
@@ -235,9 +206,11 @@ class Nurse():
                 continue
             if rnd.uniform() < degree_of_agent_availability:
                 self.shift_preferences.append((shift.day, shift.shift_num))
-                self.degree_of_availability += 1/21
+        self.degree_of_availability = degree_of_agent_availability
+        self.minimum_shifts = self.degree_of_availability
+        self.maximum_shifts = self.degree_of_availability
 
-    def assign_shift_preferences(self, matrix_nurse_availability = []):
+    def assign_shift_preferences(self, matrix_nurse_availability = [], minimum_shifts = 0, maximum_shifts = 0):
         schedule = Schedule(0)
         i = -1
         for shift in schedule.schedule:
@@ -245,6 +218,11 @@ class Nurse():
             if matrix_nurse_availability[i] == 'x':
                 self.shift_preferences.append((shift.day, shift.shift_num))
                 self.degree_of_availability += 1/21
+        self.minimum_shifts = self.degree_of_availability if minimum_shifts == 0 else minimum_shifts
+        self.maximum_shifts = self.degree_of_availability if maximum_shifts == 0 else maximum_shifts
+
+    def assign_agent_satisfaction_parameters(self, satisfaction_parameters: Agent_Satisfaction_Parameters):
+        self.satisfaction_parameters = satisfaction_parameters
 
     def print_shift_preferences(self):
         schedule = Schedule(0)
@@ -254,24 +232,46 @@ class Nurse():
                 schedule_strs.append('x')
             else:
                 schedule_strs.append(' ')
-        schedule.print_filled_in_schedule(schedule_strs, title=f"Nurse {self.id_name}'s Preferences")
+        title = f"Nurse {self.id_name}'s Preferences. Availability: " +f"({self.degree_of_availability:.3g})" 
+        schedule.print_filled_in_schedule(schedule_strs, title=title)
+
+    def print_assigned_shifts(self):
+        schedule = Schedule(0)
+        schedule_strs = []
+        for shift in schedule.schedule:
+            if shift.get_id_tuple() in self.shifts:
+                schedule_strs.append('1')
+            else:
+                schedule_strs.append(' ')
+        schedule.print_filled_in_schedule(schedule_strs, title=f"Nurse {self.id_name}'s Assigned Shifts")
+
 
     def get_productivity(self):
-        return self.degree_of_availability
+        return self.shifts/self.degree_of_availability
+    
+    def get_satisfaction(self):
+        if self.satisfaction_parameters.satisfaction_function == 'default':
+            return self.get_satisfaction_default_function()
+        return 1
 
-    """        
-    def print_shift_preferences(self):
-        schedule = Schedule(0)
-        schedule_strs = []
-        for shift in schedule.schedule:
-            schedule_strs.append(' ') # empty field for the "needed nurses of the schedule"
-            if shift.get_id_tuple() in self.shift_preferences:
-                print(shift.get_id_tuple())
-                schedule_strs.append('x')
-            else:
-                schedule_strs.append(' ')
-        schedule.print_filled_in_schedule(schedule_strs, title=f"Nurse {self.id_name}'s Preferences")
-    """
+    def get_satisfaction_default_function(self):
+        """
+        Default function for agent satisfaction that accounts for:
+        - coverage of minimum and maximum desired shift assignments, satisfaction decreases incrementally as coverages approaches the maximum
+        """
+        #TODO tune up formula
+        satisfaction_from_assigned_shifts = pow(self.satisfaction_parameters.base_decrease_coverage_satisfaction, len(self.shifts)) / math.log(self.satisfaction_parameters.base_decrease_coverage_satisfaction)
+        return satisfaction_from_assigned_shifts
+
+    def get_satisfaction_shift_stability_function(self):
+        """
+        Function for agent satisfaction that accounts for:
+        - coverage of minimum and maximum desired shift assignments, 
+        - shift stability as in preferred constant shift number assignment during the week
+        """
+        productivity = len(self.shifts)
+        return 1
+
 
 class NSP_AB_Model_Run_Results():
     beta = 0
@@ -324,7 +324,7 @@ class NSP_AB_Model():
         candidate_schedule = copy.deepcopy(schedule)
         best_schedule = copy.deepcopy(schedule)
 
-        if utility_function_parameters == None:
+        if utility_function_parameters is None:
             utility_function_parameters = Utility_Function_Parameters()
 
         # timestep is for each nurse, so total timesteps = x * num_nurses where x is range(x)

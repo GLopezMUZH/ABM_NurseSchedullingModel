@@ -1,4 +1,10 @@
 #%%
+import os
+print (os.getcwd())
+path = r'C:\Users\glopez\uzh_stuff\MOEC0559AgentBasedModeling\ABM_NurseSchedullingModel'
+os.chdir(path)
+
+#%%
 import abm_scheduling
 from abm_scheduling import Schedule as Schedule
 from abm_scheduling import Nurse as Nurse
@@ -58,5 +64,19 @@ for n in range(num_nurses):
 # Mo 1,2,3, Tu 1,2,3, We...
 matrix_nurse_availability = ['x','x','', 'x','x','',  'x','x','', 'x','x','', 'x','x','', '','','', '','','']
 nurse = Nurse(id_name=5)
-nurse.assign_shift_preferences(matrix_nurse_availability=matrix_nurse_availability)
+nurse.assign_shift_preferences(matrix_nurse_availability=matrix_nurse_availability, minimum_shifts=5, maximum_shifts=5)
 nurse.print_shift_preferences()
+
+#%%
+# -- example agent satisfaction 
+matrix_nurse_availability = ['x','x','', 'x','x','',  'x','x','', 'x','x','', 'x','x','', '','','', '','','']
+nurse = Nurse(id_name=5)
+nurse.assign_shift_preferences(matrix_nurse_availability=matrix_nurse_availability, minimum_shifts=5, maximum_shifts=5)
+nurse.print_shift_preferences()
+nurse.shifts.append(('Mo',1))#(shift.day, shift.shift_num)
+nurse.shifts.append(('Mo',2))#(shift.day, shift.shift_num)
+nurse.shifts.append(('Mo',3))#(shift.day, shift.shift_num)
+nurse.print_assigned_shifts()
+print("Nurse satisfaction, function: ", nurse.satisfaction_parameters.satisfaction_function, ": ", nurse.get_satisfaction())
+
+#%%
