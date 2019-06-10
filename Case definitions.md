@@ -39,3 +39,30 @@ Situation:
 Task:
 - Evaluate Shift Coverage over Agent satisfaction penalty for shift stability
 - Evaluate Agent Satisfaction over Agent satisfaction penalty for shift stability using shift stability function
+
+**4. Utility function that maximizes uniform shift assignment distribition to agents**
+
+Situation: 
+- 70% more nure availability on week days as weekends
+- Shift requirements higher on Friday 3rd Shift (3S), Saturday 1S and 3S, Sunday 3S
+- Beta = 0.8
+
+Task:
+- Evaluate Shift Coverage over ??
+- Evaluate Agent Satisfaction over ??
+
+
+**5. Utility function that reduces overstaffing of agents**
+
+Situation: 
+- 70% more nure availability on week days as weekends
+- Shift requirements higher on Friday 3rd Shift (3S), Saturday 1S and 3S, Sunday 3S
+- Beta = 0.8
+- Maximal number of nurses required in one shift = 7
+
+Task:
+- Evaluate Shift Coverage over Number of Nurses
+- Evaluate Agent Satisfaction over Number of Nurses using default function and shift stability function
+
+Expected results:
+- Several nurses will have a very low degree of satisfaction (the over-staffed)
