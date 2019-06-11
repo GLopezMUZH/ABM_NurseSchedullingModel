@@ -97,56 +97,6 @@ class Schedule():
                 self.schedule[idx_in_schedule].nurses.pop(idx)
         if remove_from_nurse: nurse.shifts.remove(shift_preference)
         
-    def get_utility(self, utility_function_parameters: Utility_Function_Parameters, beta=0.9):
-        if utility_function_parameters.utility_function == 'default':
-            return self.get_utility_default(utility_function_parameters=utility_function_parameters, beta=beta)
-    
-    def get_utility_default(self, utility_function_parameters: Utility_Function_Parameters,  beta=0.9):
-        """
-        Default utility function for the Shift assignment. It considers:
-        - negative penalty for overbooking on the shifts
-        - negative penalty for assigning shifts on the same day of one agent
-        - negative penalty for exeding the maximum continuous working days of one agent 
-        Parameters
-        ----------
-        beta : input float (default: 0)
-            Racionality of the agent to always choose only the best utility
-        """
-        utility = 0
-        nurses_assigned_per_day = {day: [] for day in self.days}
-        nurses_days_working = {}
-        # evaluating shift capacity (no overbooking shifts)
-        for shift in self.schedule:
-            if len(shift.nurses) > shift.num_nurses_needed:
-                utility -= utility_function_parameters.penalty_overbooking
-            else:
-                utility += len(shift.nurses) * 10
-            nurses_assigned_per_day[shift.day] += shift.get_list_of_nurses_names()
-        # evaluating if multiple shifts on the same day (employees can work max one shift per day)
-        for day in nurses_assigned_per_day:
-            counts = collections.Counter(nurses_assigned_per_day[day])
-            for nurse in counts:
-                if counts[nurse] > 1:
-                    utility -= utility_function_parameters.penalty_multiple_shifts_one_day
-                if nurse in nurses_days_working:
-                    nurses_days_working[nurse].append(1)
-                else:
-                    nurses_days_working[nurse] = [1]
-        # evaluating continuous days working (employees cannot work for more than 6 days continuously)
-        for nurse in nurses_days_working:
-            if len(nurses_days_working[nurse]) >= 7:
-                utility -= utility_function_parameters.penalty_max_continuous_days_working
-        utility *= beta
-        return utility
-
-    def get_utility_uniform_distribution(self, utility_function_parameters: Utility_Function_Parameters,  beta=0.9):
-        utility = 0
-        return utility
-
-    def get_utility_detect_overstaffing(self, utility_function_parameters: Utility_Function_Parameters,  beta=0.9):
-        utility = 0
-        return utility
-
     def print_filled_in_schedule(self, schedule_strs, title=''):
         t = PrettyTable([''] + self.days)
         t.align = 'l'
@@ -187,6 +137,8 @@ class Schedule():
 
 #%%
 class Nurse():
+    max_working_days = 6
+
     def __init__(self, id_name):
         """
         Generated with default Agent Satisfaction Parameters
@@ -215,8 +167,8 @@ class Nurse():
             if rnd.uniform() < degree_of_agent_availability:
                 self.shift_preferences.append((shift.day, shift.shift_num))
         self.degree_of_availability = degree_of_agent_availability
-        self.minimum_shifts = self.degree_of_availability
-        self.maximum_shifts = self.degree_of_availability
+        self.minimum_shifts = min(round(self.degree_of_availability*21,0), self.max_working_days)
+        self.maximum_shifts = max(round(self.degree_of_availability*21,0), self.max_working_days)
         self.gain_over_increase_assignment = 1000/self.minimum_shifts
         self.sensibility_to_increase_assignment = 7 - self.maximum_shifts #TODO tune
 
@@ -229,8 +181,8 @@ class Nurse():
             if matrix_nurse_availability[i] == 'x':
                 self.shift_preferences.append((shift.day, shift.shift_num))
                 self.degree_of_availability += 1/21
-        self.minimum_shifts = self.degree_of_availability if minimum_shifts == 0 else minimum_shifts
-        self.maximum_shifts = self.degree_of_availability if maximum_shifts == 0 else maximum_shifts
+        self.minimum_shifts = min(round(self.degree_of_availability*21,0), self.max_working_days) if minimum_shifts == 0 else minimum_shifts
+        self.maximum_shifts = min(round(self.degree_of_availability*21,0), self.max_working_days) if maximum_shifts == 0 else maximum_shifts
         self.gain_over_increase_assignment = 1000/(np.mean([self.minimum_shifts,self.maximum_shifts]))
         self.sensibility_to_increase_assignment = 7 - self.maximum_shifts #TODO tune
 
@@ -242,7 +194,7 @@ class Nurse():
                 schedule_strs.append('x')
             else:
                 schedule_strs.append(' ')
-        title = f"Nurse {self.id_name}'s Preferences. Availability: " +f"({self.degree_of_availability:.3g})" 
+        title = f"Nurse {self.id_name}'s Preferences. Availability: " + f"({self.degree_of_availability:.3g})" + "Min/Max: " + str(self.minimum_shifts) +"/" +str(self.maximum_shifts) 
         schedule.print_filled_in_schedule(schedule_strs, title=title)
 
     def print_assigned_shifts(self):
@@ -275,10 +227,8 @@ class Nurse():
         - satisfaction for new shift assignment decreases incrementally as coverages approaches the maximum
         """
         cummulated_satisfaction_from_assigned_shifts = 0
-        
         rate_under_assignment = (-1 + len(self.shifts)/self.minimum_shifts)
         rate_over_assignment = (self.maximum_shifts - len(self.shifts))/self.maximum_shifts
-        
         matching_assigned_shifts = len(set(self.shifts).intersection(self.shift_preferences))
         # penalty when under assignment
         cummulated_satisfaction_from_assigned_shifts += self.value_under_assignment * min(0, rate_under_assignment)
@@ -297,6 +247,7 @@ class Nurse():
         - coverage of minimum and maximum desired shift assignments, 
         - shift stability as in preferred constant shift number assignment during the week
         """
+        # TODO
         productivity = len(self.shifts)
         return 1
 
@@ -310,6 +261,7 @@ class NSP_AB_Model_Run_Results():
     shift_coverage = 0
     utility = 0
     utility_function = ''
+    total_agent_satisfaction = 0
 
 
 #%%
@@ -343,8 +295,98 @@ class NSP_AB_Model():
         print('Crude hypothetical shift coverage:', hypothetical_max_schedule.get_shift_coverage())
         hypothetical_max_schedule.print_shift_coverage(schedule_name="Hypothetical Maximum")
 
+    def get_utility(self, schedule: Schedule, nurses: [Nurse], utility_function_parameters: Utility_Function_Parameters, beta=0.9):
+        if utility_function_parameters.utility_function == 'default':
+            return self.get_utility_default(schedule = schedule, utility_function_parameters=utility_function_parameters, beta=beta)
+        if utility_function_parameters.utility_function == 'agent_satisfaction':
+            return self.get_utility_agent_satisfaction(schedule = schedule, nurses=nurses, utility_function_parameters=utility_function_parameters, beta=beta)
 
-    def run(self, schedule: Schedule, nurses, utility_function_parameters: Utility_Function_Parameters, beta=0.9, p_to_accept_negative_change = .001, timesteps=10000):
+    def get_utility_default(self, schedule: Schedule, utility_function_parameters: Utility_Function_Parameters,  beta=0.9):
+        """
+        Default utility function for the Shift assignment considering:
+        - negative penalty for overbooking on the shifts
+        - negative penalty for assigning shifts on the same day of one agent
+        - negative penalty for exeding the maximum continuous working days of one agent 
+        Parameters
+        ----------
+        beta : input float (default: 0)
+            Racionality of the agent to always choose only the best utility
+        """
+        utility = 0
+        nurses_assigned_per_day = {day: [] for day in schedule.days}
+        nurses_days_working = {}
+        # evaluating shift capacity (no overbooking shifts)
+        for shift in schedule.schedule:
+            if len(shift.nurses) > shift.num_nurses_needed:
+                utility -= utility_function_parameters.penalty_overbooking
+            else:
+                utility += len(shift.nurses) * 10
+            nurses_assigned_per_day[shift.day] += shift.get_list_of_nurses_names()
+        # evaluating if multiple shifts on the same day (employees can work max one shift per day)
+        for day in nurses_assigned_per_day:
+            counts = collections.Counter(nurses_assigned_per_day[day])
+            for nurse in counts:
+                if counts[nurse] > 1:
+                    utility -= utility_function_parameters.penalty_multiple_shifts_one_day
+                if nurse in nurses_days_working:
+                    nurses_days_working[nurse].append(1)
+                else:
+                    nurses_days_working[nurse] = [1]
+        # evaluating continuous days working (employees cannot work for more than 6 days continuously)
+        for nurse in nurses_days_working:
+            if len(nurses_days_working[nurse]) >= 7:
+                utility -= utility_function_parameters.penalty_max_continuous_days_working
+        utility *= beta
+        return utility
+
+    def get_utility_detect_overstaffing(self, utility_function_parameters: Utility_Function_Parameters,  beta=0.9):
+        utility = 0
+        return utility
+
+    def get_utility_agent_satisfaction(self, schedule: Schedule, nurses: [Nurse], utility_function_parameters: Utility_Function_Parameters,  beta=0.9):
+        """
+        Utility function for the Shift assignment considering:
+        - negative penalty for overbooking on the shifts
+        - negative penalty for assigning shifts on the same day of one agent
+        - negative penalty for exeding the maximum continuous working days of one agent 
+        - negative/positive value for agent_satisfaction
+        Parameters
+        ----------
+        beta : input float (default: 0)
+            Racionality of the agent to always choose only the best utility
+        """
+        utility = 0
+        nurses_assigned_per_day = {day: [] for day in schedule.days}
+        nurses_days_working = {}
+        # evaluating shift capacity (no overbooking shifts)
+        for shift in schedule.schedule:
+            if len(shift.nurses) > shift.num_nurses_needed:
+                utility -= utility_function_parameters.penalty_overbooking
+            else:
+                utility += len(shift.nurses) * 10
+            nurses_assigned_per_day[shift.day] += shift.get_list_of_nurses_names()
+        # evaluating if multiple shifts on the same day (employees can work max one shift per day)
+        for day in nurses_assigned_per_day:
+            counts = collections.Counter(nurses_assigned_per_day[day])
+            for nurse in counts:
+                if counts[nurse] > 1:
+                    utility -= utility_function_parameters.penalty_multiple_shifts_one_day
+                if nurse in nurses_days_working:
+                    nurses_days_working[nurse].append(1)
+                else:
+                    nurses_days_working[nurse] = [1]
+        # evaluating continuous days working (employees cannot work for more than 6 days continuously)
+        for nurse in nurses_days_working:
+            if len(nurses_days_working[nurse]) >= 7:
+                utility -= utility_function_parameters.penalty_max_continuous_days_working
+        # evaluating nurse satisfaction
+        for nurse in nurses:
+            utility += nurse.get_satisfaction()/len(nurses)
+        utility *= beta
+        return utility
+
+
+    def run(self, schedule: Schedule, nurses: [Nurse], utility_function_parameters: Utility_Function_Parameters, beta=0.9, p_to_accept_negative_change = .001, timesteps=10000):
         best_utility = 0
         utility_each_timestep = []
         shift_coverage_each_timestep = []
@@ -358,7 +400,7 @@ class NSP_AB_Model():
         # timestep is for each nurse, so total timesteps = x * num_nurses where x is range(x)
         for timestep in range(timesteps):
             for nurse in nurses:
-                schedule_utility = schedule.get_utility(beta=beta, utility_function_parameters=utility_function_parameters)
+                schedule_utility = self.get_utility(schedule=schedule, nurses=nurses, beta=beta, utility_function_parameters=utility_function_parameters)
                 utility_each_timestep.append(schedule_utility)
                 shift_coverage_each_timestep.append(schedule.get_shift_coverage())
                 # keep track of best utility
@@ -374,7 +416,7 @@ class NSP_AB_Model():
                 else:
                     candidate_schedule.remove_nurse_from_shift(nurse, rnd_shift_pref, False)
                 # if the change was better or randomly accept negative change, apply change to schedule
-                if (candidate_schedule.get_utility(beta=beta, utility_function_parameters=utility_function_parameters) > schedule_utility) or (rnd.random_sample() < p_to_accept_negative_change):
+                if (self.get_utility(schedule=candidate_schedule, nurses=nurses, beta=beta, utility_function_parameters=utility_function_parameters) > schedule_utility) or (rnd.random_sample() < p_to_accept_negative_change):
                     if not was_in_shift:
                         schedule.add_nurse_to_shift(nurse, rnd_shift_pref, True)
                     else:
@@ -392,15 +434,39 @@ class NSP_AB_Model():
         results.beta = beta
         results.p_to_accept_negative_change = p_to_accept_negative_change
         results.shift_coverage = best_schedule.get_shift_coverage()
-        results.utility = best_schedule.get_utility(beta=beta, utility_function_parameters=utility_function_parameters)
+        results.utility = self.get_utility(schedule=best_schedule, nurses=nurses, beta=beta, utility_function_parameters=utility_function_parameters)
         results.best_schedule = best_schedule
         results.utility_each_timestep = utility_each_timestep
         results.shift_coverage_each_timestep = shift_coverage_each_timestep
+        results.total_agent_satisfaction = self.get_total_agent_satisfaction(nurses=nurses)
 
         print('Solution shift coverage:', results.shift_coverage)
-        print('Solution utility', results.utility)
+        print('Solution utility: ', results.utility)
+        print('Agent satisfaction: ', results.total_agent_satisfaction)
 
         return results
+
+    def get_total_agent_satisfaction(self, nurses: [Nurse]):
+        total_satisfaction = 0
+        for nurse in nurses:
+            total_satisfaction += nurse.get_satisfaction()
+        return total_satisfaction
+        
+
+    def print_nurse_productivity(self, nurses: [Nurse], schedule_name = ''):
+        nrs_str = ""
+        print("Nurse productivity - ", schedule_name)
+        for nurse in nurses:
+            nrs_str = ""
+            nrs_str += str(nurse.id_name) + "---------- \n"
+            nrs_str += "min:" + str(nurse.minimum_shifts)
+            nrs_str += ", max: " + str(nurse.maximum_shifts)
+            nrs_str += ", deg.availab:" + str(nurse.degree_of_availability)
+            nrs_str += ", assigned:" + str(len(nurse.shifts))
+            nrs_str += ", prod: " + f"({(len(nurse.shifts) / nurse.minimum_shifts):.3g})"
+            nrs_str += ", satisf: " + str(nurse.get_satisfaction())
+            print(nrs_str)
+
     
     def plot_utility_per_timestep(self, utility_each_timestep):
         plt.figure()

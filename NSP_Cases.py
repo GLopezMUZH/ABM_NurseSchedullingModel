@@ -56,9 +56,7 @@ schedule.print_schedule(schedule_name="Intial Situation")
 #model.show_hypothetical_max_schedule(schedule=schedule, nurses=nurses)
 
 #%%
-p_to_accept_negative_change = .001
-beta=0.6
-results_B_07 = model.run(schedule=schedule, nurses=nurses, beta=0.7, p_to_accept_negative_change=.001, utility_function_parameters = None)
+#results_B_07 = model.run(schedule=schedule, nurses=nurses, beta=0.7, p_to_accept_negative_change=.001, utility_function_parameters = None)
 results_B_09 = model.run(schedule=schedule, nurses=nurses, beta=0.9, p_to_accept_negative_change=.001, utility_function_parameters = None)
 
 #%%
