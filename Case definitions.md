@@ -1,12 +1,3 @@
-## For software testing
-### Border cases:
-- No shift requirements, no nurses available
-- Open shift requirements, no nurses available
-- No shift requirements, some nurses available
-
-### Normal cases:
-- Open shift requirements on weekends, no nurses available on weekends
-
 ## For lecture paper
 **1. Impact of Beta**
 
