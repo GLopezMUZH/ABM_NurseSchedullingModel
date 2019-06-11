@@ -129,7 +129,7 @@ class Schedule():
             schedule_strs.append( 
                 f"need: {shift.num_nurses_needed}\n"
                 f"nurses: {len(shift.nurses)}\n"
-                f"({(len(shift.nurses) / shift.num_nurses_needed):.3g})"
+                f"({(len(shift.nurses) / max(shift.num_nurses_needed,1)):.3g})"
             )
         title = "Shift Coverage " + schedule_name
         self.print_filled_in_schedule(schedule_strs, title=title)
@@ -458,13 +458,13 @@ class NSP_AB_Model():
         print("Nurse productivity - ", schedule_name)
         for nurse in nurses:
             nrs_str = ""
-            nrs_str += str(nurse.id_name) + "---------- \n"
-            nrs_str += "min:" + str(nurse.minimum_shifts)
-            nrs_str += ", max: " + str(nurse.maximum_shifts)
-            nrs_str += ", deg.availab:" + str(nurse.degree_of_availability)
-            nrs_str += ", assigned:" + str(len(nurse.shifts))
-            nrs_str += ", prod: " + f"({(len(nurse.shifts) / nurse.minimum_shifts):.3g})"
-            nrs_str += ", satisf: " + str(nurse.get_satisfaction())
+            nrs_str += "-- " + str(nurse.id_name) + " ------------------------------- \n"
+            nrs_str += "assigned:" + str(len(nurse.shifts)) + ",\t"
+            nrs_str += "min:" + "%.0f" % nurse.minimum_shifts + ",\t"
+            nrs_str += "max: " + "%.0f" % nurse.maximum_shifts + ",\t"
+            nrs_str += "deg.availab:" + "%.2f" % nurse.degree_of_availability + ",\t"
+            nrs_str += "prod: " + "%.2f" % (len(nurse.shifts) / nurse.minimum_shifts) + ",\t"
+            nrs_str += "satisf: " + "%.2f" % (nurse.get_satisfaction())
             print(nrs_str)
 
     
