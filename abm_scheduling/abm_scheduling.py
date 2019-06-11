@@ -23,6 +23,7 @@ from prettytable import PrettyTable
 import copy
 
 import matplotlib.pylab as plt
+from scipy.integrate import simps
 #%matplotlib inline
 #plt.style.use('ggplot')
 
@@ -184,15 +185,6 @@ class Schedule():
         self.print_filled_in_schedule(schedule_strs, title=title)
 
 
-class Agent_Satisfaction_Parameters():
-    def __init__(self):
-        self.satisfaction_function = 'default'
-        self.base_decrease_coverage_satisfaction = 0.5
-        self.penalty_under_assignment = 1000
-        self.penalty_over_assignment = 1000
-        self.penalty_different_shifts_in_week = 700
-
-
 #%%
 class Nurse():
     def __init__(self, id_name):
@@ -205,7 +197,15 @@ class Nurse():
         self.degree_of_availability = 0
         self.minimum_shifts = 0
         self.maximum_shifts = 0
-        self.satisfaction_parameters = Agent_Satisfaction_Parameters()
+        # Agent_Satisfaction_Parameters()
+        self.satisfaction_function = 'default'
+        self.base_decrease_coverage_satisfaction = 0.8
+        self.gain_over_increase_assignment = 0
+        self.value_under_assignment = 1000
+        self.value_over_assignment = 1000
+        self.penalty_different_shifts_in_week = 700
+        self.penalty_wrong_shift_assigment = 700
+
     
     def generate_shift_preferences(self, degree_of_agent_availability, works_weekends):
         schedule = Schedule(0)
@@ -217,6 +217,9 @@ class Nurse():
         self.degree_of_availability = degree_of_agent_availability
         self.minimum_shifts = self.degree_of_availability
         self.maximum_shifts = self.degree_of_availability
+        self.gain_over_increase_assignment = 1000/self.minimum_shifts
+        self.sensibility_to_increase_assignment = 7 - self.maximum_shifts #TODO tune
+
 
     def assign_shift_preferences(self, matrix_nurse_availability = [], minimum_shifts = 0, maximum_shifts = 0):
         schedule = Schedule(0)
@@ -228,9 +231,8 @@ class Nurse():
                 self.degree_of_availability += 1/21
         self.minimum_shifts = self.degree_of_availability if minimum_shifts == 0 else minimum_shifts
         self.maximum_shifts = self.degree_of_availability if maximum_shifts == 0 else maximum_shifts
-
-    def assign_agent_satisfaction_parameters(self, satisfaction_parameters: Agent_Satisfaction_Parameters):
-        self.satisfaction_parameters = satisfaction_parameters
+        self.gain_over_increase_assignment = 1000/(np.mean([self.minimum_shifts,self.maximum_shifts]))
+        self.sensibility_to_increase_assignment = 7 - self.maximum_shifts #TODO tune
 
     def print_shift_preferences(self):
         schedule = Schedule(0)
@@ -253,23 +255,41 @@ class Nurse():
                 schedule_strs.append(' ')
         schedule.print_filled_in_schedule(schedule_strs, title=f"Nurse {self.id_name}'s Assigned Shifts")
 
-
     def get_productivity(self):
         return self.shifts/self.degree_of_availability
     
+    def formula_satisfaction_from_shift_assignment(self, assigned_shifts):
+        # formula for satisfaction  = 
+        # base_decrease_coverage_satisfaction ^ (number_shifts - sensibility_to_increase_assignment)
+        return pow(self.base_decrease_coverage_satisfaction, (assigned_shifts - self.sensibility_to_increase_assignment))
+
     def get_satisfaction(self):
-        if self.satisfaction_parameters.satisfaction_function == 'default':
+        if self.satisfaction_function == 'default':
             return self.get_satisfaction_default_function()
         return 1
 
     def get_satisfaction_default_function(self):
         """
         Default function for agent satisfaction that accounts for:
-        - coverage of minimum and maximum desired shift assignments, satisfaction decreases incrementally as coverages approaches the maximum
+        - coverage of minimum and maximum desired shift assignments, 
+        - satisfaction for new shift assignment decreases incrementally as coverages approaches the maximum
         """
-        #TODO tune up formula
-        satisfaction_from_assigned_shifts = pow(self.satisfaction_parameters.base_decrease_coverage_satisfaction, len(self.shifts)) / math.log(self.satisfaction_parameters.base_decrease_coverage_satisfaction)
-        return satisfaction_from_assigned_shifts
+        cummulated_satisfaction_from_assigned_shifts = 0
+        
+        rate_under_assignment = (-1 + len(self.shifts)/self.minimum_shifts)
+        rate_over_assignment = (self.maximum_shifts - len(self.shifts))/self.maximum_shifts
+        
+        matching_assigned_shifts = len(set(self.shifts).intersection(self.shift_preferences))
+        # penalty when under assignment
+        cummulated_satisfaction_from_assigned_shifts += self.value_under_assignment * min(0, rate_under_assignment)
+        # penalty when over assignment
+        cummulated_satisfaction_from_assigned_shifts += self.value_over_assignment * min(0, rate_over_assignment)
+        # increase satisfaction on number of matching assigned shifts
+        if matching_assigned_shifts > 0 and len(self.shifts) <=self.maximum_shifts:
+            x_vals = np.linspace(0,matching_assigned_shifts,5)
+            cummulated_satisfaction_from_assigned_shifts = self.gain_over_increase_assignment * simps(self.formula_satisfaction_from_shift_assignment(x_vals), x_vals)
+        
+        return cummulated_satisfaction_from_assigned_shifts
 
     def get_satisfaction_shift_stability_function(self):
         """
