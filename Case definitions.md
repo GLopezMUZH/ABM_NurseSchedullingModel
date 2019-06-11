@@ -11,7 +11,7 @@
 **1. Impact of Beta**
 
 Situation: 
-- 70% more nure availability on week days as weekends
+- 70% more agent availability on week days as weekends
 - Shift requirements higher on Friday 3rd Shift (3S), Saturday 1S and 3S, Sunday 3S
 
 Task:
@@ -21,7 +21,7 @@ Task:
 **2. Impact of Agent satisfaction sensibility on under-assignment**
 
 Situation: 
-- 70% more nure availability on week days as weekends
+- 70% more agent availability on week days as weekends
 - Shift requirements higher on Friday 3rd Shift (3S), Saturday 1S and 3S, Sunday 3S
 - Beta = 0.8
 
@@ -32,7 +32,7 @@ Task:
 **3. Impact of Agent satisfaction sensibility on shift stability (different_shifts_in_week)**
 
 Situation: 
-- 70% more nure availability on week days as weekends
+- 70% more agent availability on week days as weekends
 - Shift requirements higher on Friday 3rd Shift (3S), Saturday 1S and 3S, Sunday 3S
 - Beta = 0.8
 
@@ -43,7 +43,7 @@ Task:
 **4. Utility function that maximizes uniform shift assignment distribition to agents**
 
 Situation: 
-- 70% more nure availability on week days as weekends
+- 70% more agent availability on week days as weekends
 - Shift requirements higher on Friday 3rd Shift (3S), Saturday 1S and 3S, Sunday 3S
 - Beta = 0.8
 
@@ -55,7 +55,7 @@ Task:
 **5. Utility function that reduces overstaffing of agents**
 
 Situation: 
-- 70% more nure availability on week days as weekends
+- 70% more agent availability on week days as weekends
 - Shift requirements higher on Friday 3rd Shift (3S), Saturday 1S and 3S, Sunday 3S
 - Beta = 0.8
 - Maximal number of nurses required in one shift = 7
@@ -66,3 +66,18 @@ Task:
 
 Expected results:
 - Several nurses will have a very low degree of satisfaction (the over-staffed)
+
+**6. Impact of Agent Availability(fragmentation) on Shift Coverage**
+
+Situation: 
+- Shift requirements higher on Friday 3rd Shift (3S), Saturday 1S and 3S, Sunday 3S
+- Beta = 0.8
+
+Task:
+- Evaluate Shift Coverage over Agent Availability using Utility function for Uniform distribution of workload and Utility function to detect Overstaffing
+- Evaluate Agent Satisfaction over Agent satisfaction penalty for under-assignment using default function and shift stability function
+
+Parameters:
+- Number of nurses = 2xMaxShift requirements (0.3 nurses won't work on weekends)
+- Nurses availability [1.0, 0.4] 
+
