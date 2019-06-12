@@ -20,6 +20,7 @@ import numpy.random as rnd
 import collections
 import math
 from prettytable import PrettyTable
+from random import shuffle
 import copy
 
 import matplotlib.pylab as plt
@@ -206,9 +207,6 @@ class Nurse():
             else:
                 schedule_strs.append(' ')
         schedule.print_filled_in_schedule(schedule_strs, title=f"Nurse {self.id_name}'s Assigned Shifts")
-
-    def get_productivity(self):
-        return self.shifts/self.degree_of_availability
     
     def formula_satisfaction_from_shift_assignment(self, assigned_shifts):
         # formula for satisfaction  = 
@@ -272,6 +270,7 @@ class NSP_AB_Model():
             nurse = Nurse(id_name=n)
             nurse.generate_shift_preferences(degree_of_agent_availability, works_weekends)
             nurses.append(nurse)
+        shuffle(nurses)
         return nurses
     
     def generate_nurses_from_nurse_schedules(self, list_of_nurse_schedules):
@@ -282,6 +281,7 @@ class NSP_AB_Model():
             nurse = Nurse(id_name=i)
             nurse.assign_shift_preferences(s)
             nurses.append(nurse)
+        shuffle(nurses)
         return nurses
 
     def show_hypothetical_max_schedule(self, schedule, nurses):
