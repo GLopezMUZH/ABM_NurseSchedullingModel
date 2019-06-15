@@ -270,7 +270,6 @@ class NSP_AB_Model():
             nurse = Nurse(id_name=n)
             nurse.generate_shift_preferences(degree_of_agent_availability, works_weekends)
             nurses.append(nurse)
-        shuffle(nurses)
         return nurses
     
     def generate_nurses_from_nurse_schedules(self, list_of_nurse_schedules):
@@ -281,7 +280,6 @@ class NSP_AB_Model():
             nurse = Nurse(id_name=i)
             nurse.assign_shift_preferences(s)
             nurses.append(nurse)
-        shuffle(nurses)
         return nurses
 
     def show_hypothetical_max_schedule(self, schedule, nurses):
@@ -399,6 +397,7 @@ class NSP_AB_Model():
 
         # timestep is for each nurse, so total timesteps = x * num_nurses where x is range(x)
         for timestep in range(timesteps):
+            shuffle(nurses)
             for nurse in nurses:
                 schedule_utility = self.get_utility(schedule=schedule, nurses=nurses, beta=beta, utility_function_parameters=utility_function_parameters)
                 utility_each_timestep.append(schedule_utility)
@@ -454,9 +453,13 @@ class NSP_AB_Model():
         
 
     def print_nurse_productivity(self, nurses: [Nurse], schedule_name = ''):
+        def getNurseId(item):
+            return item.id_name
+
         nrs_str = ""
+        nrs = sorted(nurses, key=getNurseId)
         print("Nurse productivity - ", schedule_name)
-        for nurse in nurses:
+        for nurse in nrs:
             nrs_str = ""
             nrs_str += "-- " + str(nurse.id_name) + " ------------------------------- \n"
             nrs_str += "assigned:" + str(len(nurse.shifts)) + ",\t"
@@ -466,6 +469,7 @@ class NSP_AB_Model():
             nrs_str += "prod: " + "%.2f" % (len(nurse.shifts) / nurse.minimum_shifts) + ",\t"
             nrs_str += "satisf: " + "%.2f" % (nurse.get_satisfaction())
             print(nrs_str)
+
 
     
     def plot_utility_per_timestep(self, utility_each_timestep):
