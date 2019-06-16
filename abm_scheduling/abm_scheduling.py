@@ -387,7 +387,7 @@ class NSP_AB_Model():
         return utility
 
 
-    def run(self, schedule_org: Schedule, nurses_org: [Nurse], utility_function_parameters: Utility_Function_Parameters, beta=0.9, p_to_accept_negative_change = .001, timesteps=10000):
+    def run(self, schedule_org: Schedule, nurses_org: [Nurse], utility_function_parameters: Utility_Function_Parameters, beta=0.9, p_to_accept_negative_change = .001, timesteps=10000, print_stats=True):
         best_utility = 0
         utility_each_timestep = []
         shift_coverage_each_timestep = []
@@ -433,7 +433,6 @@ class NSP_AB_Model():
                         candidate_schedule.add_nurse_to_shift(nurse, rnd_shift_pref, False)
 
         schedule_name = 'Best Schedule. Beta: ' + f"({beta:.2g})" + ',p: 'f"({p_to_accept_negative_change:.3g})"
-        best_schedule.print_schedule(schedule_name=schedule_name)
         results = NSP_AB_Model_Run_Results()
         results.beta = beta
         results.p_to_accept_negative_change = p_to_accept_negative_change
@@ -445,9 +444,11 @@ class NSP_AB_Model():
         results.total_agent_satisfaction = self.get_total_agent_satisfaction(nurses=nurses)
         results.nurses = nurses
 
-        print('Solution shift coverage:', results.shift_coverage)
-        print('Solution utility: ', results.utility)
-        print('Agent satisfaction: ', results.total_agent_satisfaction)
+        if print_stats:
+            best_schedule.print_schedule(schedule_name=schedule_name)
+            print('Solution shift coverage:', results.shift_coverage)
+            print('Solution utility: ', results.utility)
+            print('Agent satisfaction: ', results.total_agent_satisfaction)
 
         return results
 
