@@ -253,7 +253,6 @@ class Nurse():
 
 
 class NSP_AB_Model_Run_Results():
-    beta = 0
     p_to_accept_negative_change = 0
     best_schedule = []
     utility_each_timestep = []
@@ -386,7 +385,7 @@ class NSP_AB_Model():
         return utility
 
 
-    def run(self, schedule_org: Schedule, nurses_org: [Nurse], utility_function_parameters: Utility_Function_Parameters, beta, p_to_accept_negative_change = .001, timesteps=10000, print_stats=True):
+    def run(self, schedule_org: Schedule, nurses_org: [Nurse], utility_function_parameters: Utility_Function_Parameters, p_to_accept_negative_change = .001, timesteps=10000, print_stats=True):
         best_utility = 0
         utility_each_timestep = []
         shift_coverage_each_timestep = []
@@ -431,9 +430,8 @@ class NSP_AB_Model():
                     else:
                         candidate_schedule.add_nurse_to_shift(nurse, rnd_shift_pref, False)
 
-        schedule_name = 'Best Schedule. Beta: ' + f"({beta:.2g})" + ',p: 'f"({p_to_accept_negative_change:.3g})"
+        schedule_name = 'Best Schedule. ' + 'p: 'f"({p_to_accept_negative_change:.3g})"
         results = NSP_AB_Model_Run_Results()
-        results.beta = beta
         results.p_to_accept_negative_change = p_to_accept_negative_change
         results.shift_coverage = best_schedule.get_shift_coverage()
         results.utility = self.get_utility(schedule=best_schedule, nurses=nurses, utility_function_parameters=utility_function_parameters)
