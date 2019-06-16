@@ -301,13 +301,13 @@ class NSP_AB_Model():
         if print_nurse_productivity:
             self.print_nurse_productivity(nurses = hiypotetical_max_nurses)
 
-    def get_utility(self, schedule: Schedule, nurses: [Nurse], utility_function_parameters: Utility_Function_Parameters, beta=0.9):
+    def get_utility(self, schedule: Schedule, nurses: [Nurse], utility_function_parameters: Utility_Function_Parameters):
         if utility_function_parameters.utility_function == 'default':
-            return self.get_utility_default(schedule = schedule, utility_function_parameters=utility_function_parameters, beta=beta)
+            return self.get_utility_default(schedule = schedule, utility_function_parameters=utility_function_parameters)
         if utility_function_parameters.utility_function == 'agent_satisfaction':
-            return self.get_utility_agent_satisfaction(schedule = schedule, nurses=nurses, utility_function_parameters=utility_function_parameters, beta=beta)
+            return self.get_utility_agent_satisfaction(schedule = schedule, nurses=nurses, utility_function_parameters=utility_function_parameters)
 
-    def get_utility_default(self, schedule: Schedule, utility_function_parameters: Utility_Function_Parameters,  beta=0.9):
+    def get_utility_default(self, schedule: Schedule, utility_function_parameters: Utility_Function_Parameters):
         """
         Default utility function for the Shift assignment considering:
         - negative penalty for overbooking on the shifts
@@ -315,8 +315,6 @@ class NSP_AB_Model():
         - negative penalty for exeding the maximum continuous working days of one agent 
         Parameters
         ----------
-        beta : input float (default: 0)
-            Racionality of the agent to always choose only the best utility
         """
         utility = 0
         nurses_assigned_per_day = {day: [] for day in schedule.days}
@@ -342,14 +340,13 @@ class NSP_AB_Model():
         for nurse in nurses_days_working:
             if len(nurses_days_working[nurse]) >= 7:
                 utility -= utility_function_parameters.penalty_max_continuous_days_working
-        utility *= beta
         return utility
 
-    def get_utility_detect_overstaffing(self, utility_function_parameters: Utility_Function_Parameters,  beta=0.9):
+    def get_utility_detect_overstaffing(self, utility_function_parameters: Utility_Function_Parameters):
         utility = 0
         return utility
 
-    def get_utility_agent_satisfaction(self, schedule: Schedule, nurses: [Nurse], utility_function_parameters: Utility_Function_Parameters,  beta=0.9):
+    def get_utility_agent_satisfaction(self, schedule: Schedule, nurses: [Nurse], utility_function_parameters: Utility_Function_Parameters):
         """
         Utility function for the Shift assignment considering:
         - negative penalty for overbooking on the shifts
@@ -358,8 +355,6 @@ class NSP_AB_Model():
         - negative/positive value for agent_satisfaction
         Parameters
         ----------
-        beta : input float (default: 0)
-            Racionality of the agent to always choose only the best utility
         """
         utility = 0
         nurses_assigned_per_day = {day: [] for day in schedule.days}
@@ -388,11 +383,10 @@ class NSP_AB_Model():
         # evaluating nurse satisfaction
         for nurse in nurses:
             utility += nurse.get_satisfaction()/len(nurses)
-        utility *= beta
         return utility
 
 
-    def run(self, schedule_org: Schedule, nurses_org: [Nurse], utility_function_parameters: Utility_Function_Parameters, beta=0.9, p_to_accept_negative_change = .001, timesteps=10000, print_stats=True):
+    def run(self, schedule_org: Schedule, nurses_org: [Nurse], utility_function_parameters: Utility_Function_Parameters, beta, p_to_accept_negative_change = .001, timesteps=10000, print_stats=True):
         best_utility = 0
         utility_each_timestep = []
         shift_coverage_each_timestep = []
@@ -409,7 +403,7 @@ class NSP_AB_Model():
         for timestep in range(timesteps):
             shuffle(nurses)
             for nurse in nurses:
-                schedule_utility = self.get_utility(schedule=schedule, nurses=nurses, beta=beta, utility_function_parameters=utility_function_parameters)
+                schedule_utility = self.get_utility(schedule=schedule, nurses=nurses, utility_function_parameters=utility_function_parameters)
                 utility_each_timestep.append(schedule_utility)
                 shift_coverage_each_timestep.append(schedule.get_shift_coverage())
                 # keep track of best utility
@@ -425,7 +419,7 @@ class NSP_AB_Model():
                 else:
                     candidate_schedule.remove_nurse_from_shift(nurse, rnd_shift_pref, False)
                 # if the change was better or randomly accept negative change, apply change to schedule
-                if (self.get_utility(schedule=candidate_schedule, nurses=nurses, beta=beta, utility_function_parameters=utility_function_parameters) > schedule_utility) or (rnd.random_sample() < p_to_accept_negative_change):
+                if (self.get_utility(schedule=candidate_schedule, nurses=nurses, utility_function_parameters=utility_function_parameters) > schedule_utility) or (rnd.random_sample() < p_to_accept_negative_change):
                     if not was_in_shift:
                         schedule.add_nurse_to_shift(nurse, rnd_shift_pref, True)
                     else:
@@ -442,7 +436,7 @@ class NSP_AB_Model():
         results.beta = beta
         results.p_to_accept_negative_change = p_to_accept_negative_change
         results.shift_coverage = best_schedule.get_shift_coverage()
-        results.utility = self.get_utility(schedule=best_schedule, nurses=nurses, beta=beta, utility_function_parameters=utility_function_parameters)
+        results.utility = self.get_utility(schedule=best_schedule, nurses=nurses, utility_function_parameters=utility_function_parameters)
         results.best_schedule = best_schedule
         results.utility_each_timestep = utility_each_timestep
         results.shift_coverage_each_timestep = shift_coverage_each_timestep
