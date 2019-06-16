@@ -169,7 +169,7 @@ class Nurse():
                 self.shift_preferences.append((shift.day, shift.shift_num))
         self.degree_of_availability = degree_of_agent_availability
         self.minimum_shifts = min(round(self.degree_of_availability*21,0), self.max_working_days)
-        self.maximum_shifts = max(round(self.degree_of_availability*21,0), self.max_working_days)
+        self.maximum_shifts = min(round(self.degree_of_availability*21,0), self.max_working_days)
         self.gain_over_increase_assignment = 1000/self.minimum_shifts
         self.sensibility_to_increase_assignment = 7 - self.maximum_shifts #TODO tune
 
