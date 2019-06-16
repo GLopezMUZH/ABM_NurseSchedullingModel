@@ -260,6 +260,7 @@ class NSP_AB_Model_Run_Results():
     utility = 0
     utility_function = ''
     total_agent_satisfaction = 0
+    nurses = []
 
 
 #%%
@@ -378,17 +379,21 @@ class NSP_AB_Model():
             if len(nurses_days_working[nurse]) >= 7:
                 utility -= utility_function_parameters.penalty_max_continuous_days_working
         # evaluating nurse satisfaction
+        '''
         for nurse in nurses:
             utility += nurse.get_satisfaction()/len(nurses)
+        '''
         utility *= beta
         return utility
 
 
-    def run(self, schedule: Schedule, nurses: [Nurse], utility_function_parameters: Utility_Function_Parameters, beta=0.9, p_to_accept_negative_change = .001, timesteps=10000):
+    def run(self, schedule_org: Schedule, nurses_org: [Nurse], utility_function_parameters: Utility_Function_Parameters, beta=0.9, p_to_accept_negative_change = .001, timesteps=10000):
         best_utility = 0
         utility_each_timestep = []
         shift_coverage_each_timestep = []
 
+        nurses = copy.deepcopy(nurses_org)
+        schedule = copy.deepcopy(schedule_org)
         candidate_schedule = copy.deepcopy(schedule)
         best_schedule = copy.deepcopy(schedule)
 
@@ -438,6 +443,7 @@ class NSP_AB_Model():
         results.utility_each_timestep = utility_each_timestep
         results.shift_coverage_each_timestep = shift_coverage_each_timestep
         results.total_agent_satisfaction = self.get_total_agent_satisfaction(nurses=nurses)
+        results.nurses = nurses
 
         print('Solution shift coverage:', results.shift_coverage)
         print('Solution utility: ', results.utility)
