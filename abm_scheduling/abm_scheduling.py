@@ -285,18 +285,21 @@ class NSP_AB_Model():
             nurses.append(nurse)
         return nurses
 
-    def show_hypothetical_max_schedule(self, schedule, nurses, print_detail_schedule = True, print_shift_coverage = True):
+    def show_hypothetical_max_schedule(self, schedule, nurses, print_detail_schedule = True, print_shift_coverage = True, print_nurse_productivity = True):
         # show what all shift preferences look like in the schedule
         hypothetical_max_schedule = copy.deepcopy(schedule)
-        for nurse in nurses:
+        hiypotetical_max_nurses = copy.deepcopy(nurses)
+        for nurse in hiypotetical_max_nurses:
             for shift in nurse.shift_preferences:
-                hypothetical_max_schedule.add_nurse_to_shift(nurse, shift, False)
+                hypothetical_max_schedule.add_nurse_to_shift(nurse, shift, True)
 
         print('Crude hypothetical shift coverage:', hypothetical_max_schedule.get_shift_coverage())
         if print_detail_schedule:   
             hypothetical_max_schedule.print_schedule(schedule_name="Hypothetical Maximum")
         if print_shift_coverage:
             hypothetical_max_schedule.print_shift_coverage(schedule_name="Hypothetical Maximum")
+        if print_nurse_productivity:
+            self.print_nurse_productivity(nurses = hiypotetical_max_nurses)
 
     def get_utility(self, schedule: Schedule, nurses: [Nurse], utility_function_parameters: Utility_Function_Parameters, beta=0.9):
         if utility_function_parameters.utility_function == 'default':
