@@ -195,7 +195,7 @@ class Nurse():
                 schedule_strs.append('x')
             else:
                 schedule_strs.append(' ')
-        title = f"Nurse {self.id_name}'s Preferences. Availability: " + f"({self.degree_of_availability:.3g})" + "Min/Max: " + str(self.minimum_shifts) +" / " +str(self.maximum_shifts) 
+        title = f"Nurse {self.id_name}'s Preferences. Availability: " + str(len(self.shift_preferences)) + f"({self.degree_of_availability:.3g})" +  " Min/Max: " + str(self.minimum_shifts) +" / " +str(self.maximum_shifts) 
         schedule.print_filled_in_schedule(schedule_strs, title=title)
 
     def print_assigned_shifts(self):
@@ -285,7 +285,7 @@ class NSP_AB_Model():
             nurses.append(nurse)
         return nurses
 
-    def show_hypothetical_max_schedule(self, schedule, nurses, print_detail_schedule = True, print_shift_coverage = True, print_nurse_productivity = True):
+    def show_hypothetical_max_schedule(self, schedule, nurses, print_detail_schedule = True, print_shift_coverage = True, print_nurse_productivity = False):
         # show what all shift preferences look like in the schedule
         hypothetical_max_schedule = copy.deepcopy(schedule)
         hiypotetical_max_nurses = copy.deepcopy(nurses)
@@ -476,13 +476,13 @@ class NSP_AB_Model():
             assigned_shifts = len(nurse.shifts)
             nrs_booking_degree = 1*(assigned_shifts<nurse.minimum_shifts) + 2*(assigned_shifts>nurse.maximum_shifts)
             #TODO rpad idname to x characters
-            nrs_str += "Nr: " +  "{: >4}".format(str(nurse.id_name)) + ", \t"
-            nrs_str += "assigned:" + str(assigned_shifts) + ",\t"
+            nrs_str += "Nr: " +  "{: >3}".format(str(nurse.id_name)) + ", \t"
+            nrs_str += "assig:" + str(assigned_shifts) + ",\t"
             nrs_str += "min:" + "%.0f" % nurse.minimum_shifts + ",\t"
             nrs_str += "max: " + "%.0f" % nurse.maximum_shifts + ",\t"
-            nrs_str += "deg.availab:" + "%.2f" % nurse.degree_of_availability + ",\t"
+            nrs_str += "deg.av:" + "%.2f" % nurse.degree_of_availability + ",\t"
             nrs_str += "prod: " + "%.2f" % ( assigned_shifts/ nurse.minimum_shifts) + ",\t"
-            nrs_str += "satisf: " + "%.2f" % (nurse.get_satisfaction()) + ",\t"
+            nrs_str += "satisf: " + f'{nurse.get_satisfaction():9.2f}' + ",\t" # "%.2f" % () 
             nrs_str += nrs_booking_lable[nrs_booking_degree]
             print(nrs_str)
 
