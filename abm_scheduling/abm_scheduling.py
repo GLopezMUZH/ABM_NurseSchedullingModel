@@ -69,7 +69,7 @@ class Schedule():
         for day in self.days:
             for shift_num in range(self.num_shifts_per_day):
                 if is_random:
-                    num_needed = rnd.randint(self.num_nurses_needed + 1) 
+                    num_needed = int(rnd.normal(self.num_nurses_needed + 1)) 
                 elif len(matrix_nurses_needed) > 0: 
                     num_needed = matrix_nurses_needed[i]
                     i += 1
