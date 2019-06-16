@@ -208,11 +208,6 @@ class Nurse():
                 schedule_strs.append(' ')
         schedule.print_filled_in_schedule(schedule_strs, title=f"Nurse {self.id_name}'s Assigned Shifts")
     
-    def formula_satisfaction_from_shift_assignment(self, assigned_shifts):
-        # formula for satisfaction  = 
-        # base_decrease_coverage_satisfaction ^ (number_shifts - sensibility_to_increase_assignment)
-        return pow(self.base_decrease_coverage_satisfaction, (assigned_shifts - self.sensibility_to_increase_assignment))
-
     def get_satisfaction(self):
         if self.satisfaction_function == 'default':
             return self.get_satisfaction_default_function()
@@ -224,18 +219,25 @@ class Nurse():
         - coverage of minimum and maximum desired shift assignments, 
         - satisfaction for new shift assignment decreases incrementally as coverages approaches the maximum
         """
+        # formula for satisfaction from shift assignment = 
+        # base_decrease_coverage_satisfaction ^ (number_shifts - sensibility_to_increase_assignment)
+        # x = assigned shifts
+        s = lambda x: pow(self.base_decrease_coverage_satisfaction, (x - self.sensibility_to_increase_assignment))
+
+        nr_shifts = len(self.shifts)
         cummulated_satisfaction_from_assigned_shifts = 0
-        rate_under_assignment = (-1 + len(self.shifts)/self.minimum_shifts)
-        rate_over_assignment = (self.maximum_shifts - len(self.shifts))/self.maximum_shifts
-        matching_assigned_shifts = len(set(self.shifts).intersection(self.shift_preferences))
+        rate_under_assignment = (-1 + nr_shifts/self.minimum_shifts)
+        rate_over_assignment = (self.maximum_shifts - nr_shifts)/self.maximum_shifts
+        # matching_assigned_shifts = len(set(self.shifts).intersection(self.shift_preferences))
         # penalty when under assignment
         cummulated_satisfaction_from_assigned_shifts += self.value_under_assignment * min(0, rate_under_assignment)
         # penalty when over assignment
         cummulated_satisfaction_from_assigned_shifts += self.value_over_assignment * min(0, rate_over_assignment)
         # increase satisfaction on number of matching assigned shifts
-        if matching_assigned_shifts > 0 and len(self.shifts) <=self.maximum_shifts:
-            x_vals = np.linspace(0,matching_assigned_shifts,5)
-            cummulated_satisfaction_from_assigned_shifts = self.gain_over_increase_assignment * simps(self.formula_satisfaction_from_shift_assignment(x_vals), x_vals)
+        # we asume all assigned shifts here match because they are choosen only from their preferences
+        if nr_shifts <=self.maximum_shifts: 
+            x_vals = np.array(list(range(nr_shifts)))
+            cummulated_satisfaction_from_assigned_shifts += self.gain_over_increase_assignment * sum(s(x_vals))
         
         return cummulated_satisfaction_from_assigned_shifts
 
@@ -379,10 +381,8 @@ class NSP_AB_Model():
             if len(nurses_days_working[nurse]) >= 7:
                 utility -= utility_function_parameters.penalty_max_continuous_days_working
         # evaluating nurse satisfaction
-        '''
         for nurse in nurses:
             utility += nurse.get_satisfaction()/len(nurses)
-        '''
         utility *= beta
         return utility
 
@@ -467,7 +467,8 @@ class NSP_AB_Model():
         print("Nurse productivity - ", schedule_name)
         for nurse in nrs:
             nrs_str = ""
-            nrs_str += "-- " + str(nurse.id_name) + " ------------------------------- \n"
+            #TODO rpad idname to x characters
+            nrs_str += "Nr: " + str(nurse.id_name) + ", \t"
             nrs_str += "assigned:" + str(len(nurse.shifts)) + ",\t"
             nrs_str += "min:" + "%.0f" % nurse.minimum_shifts + ",\t"
             nrs_str += "max: " + "%.0f" % nurse.maximum_shifts + ",\t"
