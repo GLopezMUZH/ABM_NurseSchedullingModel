@@ -285,16 +285,18 @@ class NSP_AB_Model():
             nurses.append(nurse)
         return nurses
 
-    def show_hypothetical_max_schedule(self, schedule, nurses):
+    def show_hypothetical_max_schedule(self, schedule, nurses, print_detail_schedule = True, print_shift_coverage = True):
         # show what all shift preferences look like in the schedule
         hypothetical_max_schedule = copy.deepcopy(schedule)
         for nurse in nurses:
             for shift in nurse.shift_preferences:
                 hypothetical_max_schedule.add_nurse_to_shift(nurse, shift, False)
-                
-        hypothetical_max_schedule.print_schedule(schedule_name="Hypothetical Maximum")
+
         print('Crude hypothetical shift coverage:', hypothetical_max_schedule.get_shift_coverage())
-        hypothetical_max_schedule.print_shift_coverage(schedule_name="Hypothetical Maximum")
+        if print_detail_schedule:   
+            hypothetical_max_schedule.print_schedule(schedule_name="Hypothetical Maximum")
+        if print_shift_coverage:
+            hypothetical_max_schedule.print_shift_coverage(schedule_name="Hypothetical Maximum")
 
     def get_utility(self, schedule: Schedule, nurses: [Nurse], utility_function_parameters: Utility_Function_Parameters, beta=0.9):
         if utility_function_parameters.utility_function == 'default':
@@ -463,18 +465,22 @@ class NSP_AB_Model():
             return item.id_name
 
         nrs_str = ""
+        nrs_booking_lable = ['ok','underbooked','overbooked']
         nrs = sorted(nurses, key=getNurseId)
         print("Nurse productivity - ", schedule_name)
         for nurse in nrs:
             nrs_str = ""
+            assigned_shifts = len(nurse.shifts)
+            nrs_booking_degree = 1*(assigned_shifts<nurse.minimum_shifts) + 2*(assigned_shifts>nurse.maximum_shifts)
             #TODO rpad idname to x characters
             nrs_str += "Nr: " + str(nurse.id_name) + ", \t"
-            nrs_str += "assigned:" + str(len(nurse.shifts)) + ",\t"
+            nrs_str += "assigned:" + str(assigned_shifts) + ",\t"
             nrs_str += "min:" + "%.0f" % nurse.minimum_shifts + ",\t"
             nrs_str += "max: " + "%.0f" % nurse.maximum_shifts + ",\t"
             nrs_str += "deg.availab:" + "%.2f" % nurse.degree_of_availability + ",\t"
-            nrs_str += "prod: " + "%.2f" % (len(nurse.shifts) / nurse.minimum_shifts) + ",\t"
-            nrs_str += "satisf: " + "%.2f" % (nurse.get_satisfaction())
+            nrs_str += "prod: " + "%.2f" % ( assigned_shifts/ nurse.minimum_shifts) + ",\t"
+            nrs_str += "satisf: " + "%.2f" % (nurse.get_satisfaction()) + ",\t"
+            nrs_str += nrs_booking_lable[nrs_booking_degree]
             print(nrs_str)
 
 
