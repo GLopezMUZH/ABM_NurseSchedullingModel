@@ -1,9 +1,19 @@
 ## For lecture paper
+**0. Nurse availability levels**
+
+Situation: 
+- 70% more agent availability on week days as weekends
+- Shift requirements normal distribution around 5 nurses/shift
+- Beta = 0.8
+
+Task:
+- Evaluate Shift Coverage over Nurse availability starting from 0 to 5times shift requirements
+
 **1. Impact of Beta**
 
 Situation: 
 - 70% more agent availability on week days as weekends
-- Shift requirements higher on Friday 3rd Shift (3S), Saturday 1S and 3S, Sunday 3S
+- Shift requirements normal distribution around 5 nurses/shift
 
 Task:
 - Evaluate Shift Coverage over Beta: [0.1,0.9]
@@ -13,7 +23,7 @@ Task:
 
 Situation: 
 - 70% more agent availability on week days as weekends
-- Shift requirements higher on Friday 3rd Shift (3S), Saturday 1S and 3S, Sunday 3S
+- Shift requirements normal distribution around 5 nurses/shift
 - Beta = 0.8
 
 Task:
