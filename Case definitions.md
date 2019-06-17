@@ -4,27 +4,26 @@
 Situation: 
 - 70% more agent availability on week days as weekends
 - Shift requirements normal distribution around 5 nurses/shift
-- Beta = 0.8
+- p_to_accept_negative_change=.001
 
 Task:
 - Evaluate Shift Coverage over Nurse availability starting from 0 to 5times shift requirements
 
-**1. Impact of Beta**
+**1. Impact of p_negative**
 
 Situation: 
-- 70% more agent availability on week days as weekends
-- Shift requirements normal distribution around 5 nurses/shift
+- 70% agent availability on weekdays and weekends
 
 Task:
-- Evaluate Shift Coverage over Beta: [0.1,0.9]
-- Evaluate Agent Satisfaction over Beta: [0.1,0.9] using default function and shift stability function
+- Evaluate Shift Coverage over p_negative: [.001, .0025, .005, .0075, .01, .02, .03, .05, .1, .2]
+- Evaluate Agent Satisfaction over p_negative: [.001, .0025, .005, .0075, .01, .02, .03, .05, .1, .2]
 
 **2. Impact of Agent satisfaction sensibility on under-assignment**
 
 Situation: 
 - 70% more agent availability on week days as weekends
 - Shift requirements normal distribution around 5 nurses/shift
-- Beta = 0.8
+- p_to_accept_negative_change=.001
 
 Task:
 - Evaluate Shift Coverage over Agent satisfaction penalty for under-assignment
@@ -35,7 +34,7 @@ Task:
 Situation: 
 - 70% more agent availability on week days as weekends
 - Shift requirements higher on Friday 3rd Shift (3S), Saturday 1S and 3S, Sunday 3S
-- Beta = 0.8
+- p_to_accept_negative_change=.001
 
 Task:
 - Evaluate Shift Coverage over Agent satisfaction penalty for shift stability
@@ -46,7 +45,7 @@ Task:
 Situation: 
 - 70% more agent availability on week days as weekends
 - Shift requirements higher on Friday 3rd Shift (3S), Saturday 1S and 3S, Sunday 3S
-- Beta = 0.8
+- p_to_accept_negative_change=.001
 
 Task:
 - Evaluate Shift Coverage over ??
@@ -58,7 +57,7 @@ Task:
 Situation: 
 - 70% more agent availability on week days as weekends
 - Shift requirements higher on Friday 3rd Shift (3S), Saturday 1S and 3S, Sunday 3S
-- Beta = 0.8
+- p_to_accept_negative_change=.001
 - Maximal number of nurses required in one shift = 7
 
 Task:
@@ -72,7 +71,7 @@ Expected results:
 
 Situation: 
 - Shift requirements higher on Friday 3rd Shift (3S), Saturday 1S and 3S, Sunday 3S
-- Beta = 0.8
+- p_to_accept_negative_change=.001
 
 Task:
 - Evaluate Shift Coverage over Agent Availability using Utility function for Uniform distribution of workload and Utility function to detect Overstaffing
