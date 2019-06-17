@@ -153,6 +153,7 @@ class Nurse():
         # Agent_Satisfaction_Parameters()
         self.satisfaction_function = 'default'
         self.base_decrease_coverage_satisfaction = 0.8
+        self.sensibility_to_increase_assignment = 7
         self.gain_over_increase_assignment = 0
         self.value_under_assignment = 1000
         self.value_over_assignment = 1000
@@ -171,7 +172,7 @@ class Nurse():
         self.minimum_shifts = min(round(self.degree_of_availability*21,0), self.max_working_days)
         self.maximum_shifts = min(round(self.degree_of_availability*21,0), self.max_working_days)
         self.gain_over_increase_assignment = 1000/self.minimum_shifts
-        self.sensibility_to_increase_assignment = 7 - self.maximum_shifts #TODO tune
+        self.sensibility_to_increase_assignment = 7 - self.maximum_shifts
 
 
     def assign_shift_preferences(self, matrix_nurse_availability = [], minimum_shifts = 0, maximum_shifts = 0):
@@ -185,7 +186,7 @@ class Nurse():
         self.minimum_shifts = min(round(self.degree_of_availability*21,0), self.max_working_days) if minimum_shifts == 0 else minimum_shifts
         self.maximum_shifts = min(round(self.degree_of_availability*21,0), self.max_working_days) if maximum_shifts == 0 else maximum_shifts
         self.gain_over_increase_assignment = 1000/(np.mean([self.minimum_shifts,self.maximum_shifts]))
-        self.sensibility_to_increase_assignment = 7 - self.maximum_shifts #TODO tune
+        self.sensibility_to_increase_assignment = 7 - self.maximum_shifts
 
     def print_shift_preferences(self):
         schedule = Schedule(0)
@@ -240,16 +241,6 @@ class Nurse():
             cummulated_satisfaction_from_assigned_shifts += self.gain_over_increase_assignment * sum(s(x_vals))
         
         return cummulated_satisfaction_from_assigned_shifts
-
-    def get_satisfaction_shift_stability_function(self):
-        """
-        Function for agent satisfaction that accounts for:
-        - coverage of minimum and maximum desired shift assignments, 
-        - shift stability as in preferred constant shift number assignment during the week
-        """
-        # TODO
-        productivity = len(self.shifts)
-        return 1
 
 
 class NSP_AB_Model_Run_Results():
@@ -468,7 +459,6 @@ class NSP_AB_Model():
             nrs_str = ""
             assigned_shifts = len(nurse.shifts)
             nrs_booking_degree = 1*(assigned_shifts<nurse.minimum_shifts) + 2*(assigned_shifts>nurse.maximum_shifts)
-            #TODO rpad idname to x characters
             nrs_str += "Nr: " +  "{: >3}".format(str(nurse.id_name)) + ", \t"
             nrs_str += "assig:" + str(assigned_shifts) + ",\t"
             nrs_str += "min:" + "%.0f" % nurse.minimum_shifts + ",\t"
